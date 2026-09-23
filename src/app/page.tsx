@@ -7,6 +7,7 @@ export default async function FeedPage() {
   const listings = await prisma.listing.findMany({
     orderBy: { createdAt: "desc" },
     take: 100,
+    include: { seller: { select: { name: true } } },
   });
 
   return (

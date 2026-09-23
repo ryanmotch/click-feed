@@ -22,29 +22,43 @@ enum ListingStatus {
   CANCELLED
 }
 
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime  @default(now())
+  listings     Listing[]
+  payments     Payment[]
+}
+
 model Listing {
-  id            String        @id @default(cuid())
-  title         String
-  description   String?
-  store         String
-  kind          ListingKind
+  id               String        @id @default(cuid())
+  title            String
+  description      String?
+  store            String
+  kind             ListingKind
   faceValueCents   Int
   askingPriceCents Int
-  sellerName    String
-  sellerContact String?
-  imageUrl      String?
-  status        ListingStatus @default(AVAILABLE)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  payment       Payment?
+  seller           User          @relation(fields: [sellerId], references: [id])
+  sellerId         String
+  sellerContact    String?
+  imageUrl         String?
+  status           ListingStatus @default(AVAILABLE)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  payment          Payment?
 
   @@index([status, createdAt])
+  @@index([sellerId])
 }
 
 model Payment {
   id                    String   @id @default(cuid())
   listing               Listing  @relation(fields: [listingId], references: [id])
   listingId             String   @unique
+  buyer                 User     @relation(fields: [buyerId], references: [id])
+  buyerId               String
   stripeSessionId       String   @unique
   stripePaymentIntentId String?
   buyerEmail            String?
@@ -52,4 +66,6 @@ model Payment {
   status                String   @default("pending")
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+
+  @@index([buyerId])
 }

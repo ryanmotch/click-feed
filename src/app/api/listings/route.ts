@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createListingSchema } from "@/lib/validation";
 
@@ -6,11 +7,20 @@ export async function GET() {
   const listings = await prisma.listing.findMany({
     orderBy: { createdAt: "desc" },
     take: 100,
+    include: { seller: { select: { name: true } } },
   });
   return NextResponse.json({ listings });
 }
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { error: "You need to be logged in to post a listing" },
+      { status: 401 }
+    );
+  }
+
   const body = await request.json().catch(() => null);
   if (!body) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
@@ -41,7 +51,7 @@ export async function POST(request: NextRequest) {
       kind: data.kind,
       faceValueCents: data.faceValueCents,
       askingPriceCents: data.askingPriceCents,
-      sellerName: data.sellerName,
+      sellerId: session.user.id,
       sellerContact: data.sellerContact || null,
       imageUrl: data.imageUrl || null,
     },

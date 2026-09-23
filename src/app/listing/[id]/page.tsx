@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { formatCents } from "@/lib/format";
 import { PayButton } from "@/components/PayButton";
@@ -15,10 +16,17 @@ export default async function ListingDetailPage({
   const { id } = await params;
   const { paid, canceled } = await searchParams;
 
-  const listing = await prisma.listing.findUnique({ where: { id } });
+  const [listing, session] = await Promise.all([
+    prisma.listing.findUnique({
+      where: { id },
+      include: { seller: { select: { name: true } } },
+    }),
+    auth(),
+  ]);
   if (!listing) notFound();
 
   const showSellerContact = listing.status === "PAID";
+  const isOwnListing = session?.user?.id === listing.sellerId;
 
   return (
     <div className="mx-auto max-w-lg">
@@ -63,12 +71,27 @@ export default async function ListingDetailPage({
         </div>
         <div className="mt-1 flex items-baseline justify-between text-sm text-neutral-400">
           <span>Posted by</span>
-          <span>{listing.sellerName}</span>
+          <span>{listing.seller.name}</span>
         </div>
       </div>
 
       <div className="mt-4">
-        {listing.status === "AVAILABLE" && <PayButton listingId={listing.id} />}
+        {listing.status === "AVAILABLE" && isOwnListing && (
+          <p className="rounded-md bg-neutral-100 px-4 py-3 text-center text-sm text-neutral-500">
+            This is your own listing.
+          </p>
+        )}
+        {listing.status === "AVAILABLE" && !isOwnListing && !session && (
+          <a
+            href={`/login?callbackUrl=/listing/${listing.id}`}
+            className="block w-full rounded-md bg-green-600 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-green-700"
+          >
+            Log in to pay
+          </a>
+        )}
+        {listing.status === "AVAILABLE" && !isOwnListing && session && (
+          <PayButton listingId={listing.id} />
+        )}
         {listing.status === "PENDING" && (
           <p className="rounded-md bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">
             A payment is in progress for this listing.

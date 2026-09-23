@@ -2,6 +2,8 @@ import Link from "next/link";
 import { formatCents } from "@/lib/format";
 import type { Listing } from "@/generated/prisma/client";
 
+type ListingWithSeller = Listing & { seller: { name: string } };
+
 const statusStyles: Record<Listing["status"], string> = {
   AVAILABLE: "bg-green-100 text-green-800",
   PENDING: "bg-amber-100 text-amber-800",
@@ -16,7 +18,7 @@ const statusLabels: Record<Listing["status"], string> = {
   CANCELLED: "Cancelled",
 };
 
-export function ListingCard({ listing }: { listing: Listing }) {
+export function ListingCard({ listing }: { listing: ListingWithSeller }) {
   const savingsPct = Math.round(
     (1 - listing.askingPriceCents / listing.faceValueCents) * 100
   );
@@ -52,7 +54,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
             {savingsPct > 0 ? ` · ${savingsPct}% off` : ""}
           </p>
         </div>
-        <p className="text-xs text-neutral-400">by {listing.sellerName}</p>
+        <p className="text-xs text-neutral-400">by {listing.seller.name}</p>
       </div>
     </Link>
   );
