@@ -1,0 +1,55 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ListingKind {
+  RECEIPT
+  GIFT_CARD
+}
+
+enum ListingStatus {
+  AVAILABLE
+  PENDING
+  PAID
+  CANCELLED
+}
+
+model Listing {
+  id            String        @id @default(cuid())
+  title         String
+  description   String?
+  store         String
+  kind          ListingKind
+  faceValueCents   Int
+  askingPriceCents Int
+  sellerName    String
+  sellerContact String?
+  imageUrl      String?
+  status        ListingStatus @default(AVAILABLE)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  payment       Payment?
+
+  @@index([status, createdAt])
+}
+
+model Payment {
+  id                    String   @id @default(cuid())
+  listing               Listing  @relation(fields: [listingId], references: [id])
+  listingId             String   @unique
+  stripeSessionId       String   @unique
+  stripePaymentIntentId String?
+  buyerEmail            String?
+  amountCents           Int
+  status                String   @default("pending")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}

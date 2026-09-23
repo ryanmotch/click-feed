@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
+
+.vercel
+.env*
+
+# AI agent skill files synced by `prisma init` (tooling convenience, not app code)
+/.claude/skills
+/.agents
+/.windsurf
+skills-lock.json
